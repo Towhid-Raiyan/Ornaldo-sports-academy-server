@@ -191,6 +191,16 @@ async function run() {
             res.send(allClasses);
         });
 
+        // get selected class using id
+        app.get("/pay/selectedClasses/:id",verifyJWT, async (req, res) => {
+          
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await selectedCourseCollection.findOne(query);
+            console.log(result);
+            res.send(result);
+        });
+
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
