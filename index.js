@@ -86,7 +86,69 @@ async function run() {
             res.send({ token });
         });
 
+        // homepage
+        // popular classses
+        app.get("/popularClasses", async (req, res) => {
+            try {
+                const popularClasses = await classesCollection
+                    .find()
+                    .sort({ enrolledStudents: -1 })
+                    .limit(6)
+                    .toArray();
+                res.json(popularClasses);
+            } catch (error) {
+                console.error("Error fetching popular classes:", error);
+                res.status(500).json({ error: "Internal server error" });
+            }
+        });
+        // popular instructors
+        
+        // Assuming you have a "instructors" collection in your MongoDB database
+        // Retrieve the top 6 instructors based on the number of students in their classes
+        app.get("/popularInstructors", async (req, res) => {
+            try {
+                const popularInstructors = await usersCollection
+                    .aggregate([
+                        {
+                            $match: { role: "instructor" },
+                        },
+                        {
+                            $lookup: {
+                                from: "classes",
+                                localField: "name",
+                                foreignField: "instructor",
+                                as: "classes",
+                            },
+                        },
+                        {
+                            $unwind: "$classes",
+                        },
+                        {
+                            $group: {
+                                _id: "$_id",
+                                name: { $first: "$name" },
+                                image: { $first: "$image" },
+                                totalStudents: {
+                                    $sum: "$classes.enrolledStudents",
+                                },
+                                course: { $first: "$classes.name" },
+                            },
+                        },
+                        {
+                            $sort: { totalStudents: -1 },
+                        },
+                        {
+                            $limit: 6,
+                        },
+                    ])
+                    .toArray();
 
+                res.json(popularInstructors);
+            } catch (error) {
+                console.error("Error fetching popular instructors:", error);
+                res.status(500).json({ error: "Internal server error" });
+            }
+        });
 
 
         // store an user to the database
@@ -102,7 +164,7 @@ async function run() {
             const result = await usersCollection.insertOne(user);
             res.send(result);
         });
-        
+
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
