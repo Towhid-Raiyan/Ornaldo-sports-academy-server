@@ -4,7 +4,7 @@ const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 require("dotenv").config();
 const jwt = require("jsonwebtoken");
 const app = express();
-// const stripe = require("stripe")(process.env.SECRET_KEY);
+const stripe = require("stripe")(process.env.SECRET_KEY);
 const port = process.env.PORT || 5000;
 
 
@@ -248,7 +248,27 @@ async function run() {
             res.send(result);
         });
 
+        // store payment
+        app.post("/payments",verifyJWT, async (req, res) => {
+            const payment = req.body;
 
+            const result = await paymentCollection.insertOne(payment);
+
+            const selectedCourseID = payment.selectedCourseID;
+            // now in selectedCourseCollection change this course status to paid
+            await selectedCourseCollection.updateOne(
+                { _id: new ObjectId(selectedCourseID) },
+                { $set: { status: "paid" } }
+            );
+
+            const courseID = payment.courseId;
+            // now from this classesCollection available seat will reduce by 1 and enrolledStudents will increase by 1
+            await classesCollection.updateOne(
+                { _id: new ObjectId(courseID) },
+                { $inc: { availableSeats: -1, enrolledStudents: 1 } }
+            );
+            res.send(result);
+        });
 
         // isStudent??
         app.get("/users/student/:email", verifyJWT, async (req, res) => {
@@ -262,6 +282,32 @@ async function run() {
             const query = { email: email };
             const user = await usersCollection.findOne(query);
             const result = { student: user?.role === "student" };
+            res.send(result);
+        });
+
+        // make payment intent
+        app.post("/create-payment-intent", async (req, res) => {
+            const { price } = req.body;
+            const amount = price * 100;
+
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount: amount,
+                currency: "usd",
+                payment_method_types: ["card"],
+            });
+
+            res.send({
+                clientSecret: paymentIntent.client_secret,
+            });
+        });
+        // get payment history
+        app.get("/payment-history/:email",verifyJWT, async (req, res) => {
+            const email = req.params.email;
+
+            // Find payment histories for the provided email using the paymentCollection
+            const result = await paymentCollection
+                .find({ user: email })
+                .toArray();
             res.send(result);
         });
 
