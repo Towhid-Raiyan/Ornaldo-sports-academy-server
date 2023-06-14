@@ -165,6 +165,14 @@ async function run() {
             res.send(result);
         });
 
+         //   get approved classes
+         app.get("/classes", async (req, res) => {
+            const classes = await classesCollection
+                .find({ status: "approved" })
+                .toArray();
+            res.send(classes);
+        });
+
 
         // get all instructos
         app.get("/instructors", async (req, res) => {
@@ -201,7 +209,6 @@ async function run() {
                 });
             }
             
-
             // console.log(selectedClass);
             const result = await selectedCourseCollection.insertOne(
                 selectedClass
@@ -238,6 +245,23 @@ async function run() {
             const query = { _id: new ObjectId(id) };
             const result = await selectedCourseCollection.findOne(query);
             console.log(result);
+            res.send(result);
+        });
+
+
+
+        // isStudent??
+        app.get("/users/student/:email", verifyJWT, async (req, res) => {
+            const email = req.params.email;
+
+            console.log(email);
+            if (req.decoded.email !== email) {
+                res.send({ student: false });
+            }
+
+            const query = { email: email };
+            const user = await usersCollection.findOne(query);
+            const result = { student: user?.role === "student" };
             res.send(result);
         });
 
