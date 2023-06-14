@@ -102,7 +102,7 @@ async function run() {
             }
         });
         // popular instructors
-        
+
         // Assuming you have a "instructors" collection in your MongoDB database
         // Retrieve the top 6 instructors based on the number of students in their classes
         app.get("/popularInstructors", async (req, res) => {
@@ -163,6 +163,15 @@ async function run() {
 
             const result = await usersCollection.insertOne(user);
             res.send(result);
+        });
+
+
+        // get all instructos
+        app.get("/instructors", async (req, res) => {
+            const instructors = await usersCollection
+                .find({ role: "instructor" })
+                .toArray();
+            res.send(instructors);
         });
 
         // Send a ping to confirm a successful connection
