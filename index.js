@@ -174,6 +174,46 @@ async function run() {
             res.send(instructors);
         });
 
+        // get total count of instructors classes
+        app.get("/classes/count/:instructorName", async (req, res) => {
+            const instructorName = req.params.instructorName;
+            const classCount = await classesCollection.countDocuments({
+                instructor: instructorName,
+            });
+            console.log(classCount);
+            res.json({ count: classCount });
+        });
+        //save selected class
+        app.post("/classes",verifyJWT, async (req, res) => {
+            const selectedClass = req.body;
+            // check already selected or not ?
+            const email = selectedClass.email;
+            const courseId = selectedClass.course._id;
+
+            const existingSelection = await selectedCourseCollection.findOne({
+                email: email,
+                "course._id": courseId,
+            });
+            if (existingSelection) {
+                // Email has already selected this course
+                return res.send({
+                    error: "This course has already been selected by the email.",
+                });
+            }
+            
+
+            // console.log(selectedClass);
+            const result = await selectedCourseCollection.insertOne(
+                selectedClass
+            );
+            res.send(result);
+        });
+        app.delete('/deleteSelected/:id',verifyJWT,async(req,res)=>{
+            const id = req.params.id;
+            const result = await selectedCourseCollection.deleteOne({ _id: new ObjectId(id) });
+            res.send(result)
+        })
+
         // get selected classes
         app.get("/selectedClasses/:email",verifyJWT, async (req, res) => {
             const email = req.params.email;
