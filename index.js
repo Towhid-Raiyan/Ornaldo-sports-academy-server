@@ -174,6 +174,15 @@ async function run() {
             res.send(instructors);
         });
 
+        // get selected classes
+        app.get("/selectedClasses/:email",verifyJWT, async (req, res) => {
+            const email = req.params.email;
+            console.log(email);
+            const selectedClasses = await selectedCourseCollection
+                .find({ email })
+                .toArray();
+            res.send(selectedClasses);
+        });
 
          // get all classes
          app.get("/all-classes", async (req, res) => {
