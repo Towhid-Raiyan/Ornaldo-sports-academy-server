@@ -174,7 +174,7 @@ async function run() {
         });
 
 
-        // get all instructos
+        // get all instructors
         app.get("/instructors", async (req, res) => {
             const instructors = await usersCollection
                 .find({ role: "instructor" })
